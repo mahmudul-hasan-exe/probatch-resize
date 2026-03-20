@@ -13,12 +13,23 @@ import {
   RiFileImageLine,
   RiSeparator,
   RiInboxArchiveLine,
-  RiLoader4Line
+  RiLoader4Line,
+  RiPaletteLine,
+  RiLayoutGridLine,
+  RiFocus2Line,
+  RiMagicLine
 } from '@remixicon/react'
 import './index.css'
 
 const PRESETS = [
   { name: 'Standard Preview (700×900)', width: 700, height: 900, icon: <RiFullscreenLine size={16} /> },
+]
+
+const BG_STYLES = [
+  { id: 'white', name: 'Pure White', icon: <RiPaletteLine size={14} />, description: 'Minimalist clean look' },
+  { id: 'studio', name: 'Soft Studio', icon: <RiMagicLine size={14} />, description: 'Elegant depth gradient' },
+  { id: 'dots', name: 'Modern Dots', icon: <RiFocus2Line size={14} />, description: 'Tech-focused aesthetic' },
+  { id: 'grid', name: 'Architect Grid', icon: <RiLayoutGridLine size={14} />, description: 'Precision layout feel' },
 ]
 
 function App() {
@@ -32,6 +43,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [isBatching, setIsBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState(0)
+  const [bgStyle, setBgStyle] = useState('white')
   
   const canvasRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -71,6 +83,45 @@ function App() {
     })
   }
 
+  const drawBackground = useCallback((ctx, w, h, style) => {
+    // Base white
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, w, h)
+
+    if (style === 'studio') {
+      const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h))
+      grad.addColorStop(0, '#ffffff')
+      grad.addColorStop(1, '#f1f5f9')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, w, h)
+    } else if (style === 'dots') {
+      ctx.fillStyle = '#cbd5e1'
+      const dotSize = 1.2
+      const gap = 24
+      for (let x = gap/2; x < w; x += gap) {
+        for (let y = gap/2; y < h; y += gap) {
+          ctx.beginPath()
+          ctx.arc(x, y, dotSize, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+    } else if (style === 'grid') {
+      ctx.strokeStyle = '#f1f5f9'
+      ctx.lineWidth = 1
+      const gap = 40
+      ctx.beginPath()
+      for (let x = 0; x <= w; x += gap) {
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, h)
+      }
+      for (let y = 0; y <= h; y += gap) {
+        ctx.moveTo(0, y)
+        ctx.lineTo(w, y)
+      }
+      ctx.stroke()
+    }
+  }, [])
+
   const updateCanvas = useCallback(() => {
     if (!activeFile || !canvasRef.current) return
 
@@ -79,10 +130,22 @@ function App() {
     canvas.width = width
     canvas.height = height
 
-    // Clear and draw
-    ctx.clearRect(0, 0, width, height)
-    ctx.drawImage(activeFile.img, 0, 0, width, height)
-  }, [activeFile, width, height])
+    // Draw background pattern
+    drawBackground(ctx, width, height, bgStyle)
+
+    // Calculate centered dimensions maintaining aspect ratio (contain)
+    const img = activeFile.img
+    const hRatio = width / img.width
+    const vRatio = height / img.height
+    const ratio = Math.min(1, hRatio, vRatio)
+    
+    const drawWidth = img.width * ratio
+    const drawHeight = img.height * ratio
+    const x = (width - drawWidth) / 2
+    const y = (height - drawHeight) / 2
+
+    ctx.drawImage(img, x, y, drawWidth, drawHeight)
+  }, [activeFile, width, height, bgStyle, drawBackground])
 
   useEffect(() => {
     updateCanvas()
@@ -133,9 +196,21 @@ function App() {
       tempCanvas.width = width
       tempCanvas.height = height
       
-      // Clear and draw
-      ctx.clearRect(0, 0, width, height)
-      ctx.drawImage(f.img, 0, 0, width, height)
+      // Draw background pattern
+      drawBackground(ctx, width, height, bgStyle)
+
+      // Calculate centered dimensions maintaining aspect ratio (contain)
+      const img = f.img
+      const hRatio = width / img.width
+      const vRatio = height / img.height
+      const ratio = Math.min(1, hRatio, vRatio)
+      
+      const drawWidth = img.width * ratio
+      const drawHeight = img.height * ratio
+      const x = (width - drawWidth) / 2
+      const y = (height - drawHeight) / 2
+
+      ctx.drawImage(img, x, y, drawWidth, drawHeight)
       
       const dataUrl = tempCanvas.toDataURL(format, quality / 100)
       const data = dataUrl.split(',')[1]
@@ -274,6 +349,31 @@ function App() {
                                         </div>
                                     </div>
                                     <RiArrowRightSLine size={16} className="text-slate-300 group-hover:text-brand-400 group-hover:translate-x-0.5 transition-all" />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Background Styles */}
+                    <div className="space-y-4 pt-2">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
+                            <RiPaletteLine size={16} className="text-brand-600" />
+                            Background Backdrop
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {BG_STYLES.map((style) => (
+                                <button 
+                                    key={style.id}
+                                    onClick={() => setBgStyle(style.id)}
+                                    className={`flex flex-col gap-2 p-3 rounded-xl border transition-all text-left group ${bgStyle === style.id ? 'bg-brand-50 border-brand-200' : 'bg-white border-slate-200/60 hover:border-slate-300'}`}
+                                >
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${bgStyle === style.id ? 'bg-brand-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`}>
+                                      {React.cloneElement(style.icon, { size: 16 })}
+                                    </div>
+                                    <div>
+                                      <p className={`text-[11px] font-bold ${bgStyle === style.id ? 'text-brand-900' : 'text-slate-700'}`}>{style.name}</p>
+                                      <p className="text-[9px] font-medium text-slate-400 leading-tight mt-0.5">{style.description}</p>
+                                    </div>
                                 </button>
                             ))}
                         </div>
