@@ -223,7 +223,7 @@ function App() {
     const content = await zip.generateAsync({ type: 'blob' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(content)
-    link.download = `batch-resized-${new Date().getTime()}.zip`
+    link.download = `softsync-resized-${new Date().getTime()}.zip`
     link.click()
     
     setIsBatching(false)
@@ -449,6 +449,23 @@ function App() {
                   </>
                 )}
             </button>
+
+            <div className="pt-2 flex items-center justify-center gap-2 border-t border-slate-100/80">
+              <span className="text-[11px] font-medium text-slate-400">A product of</span>
+              <a 
+                href="https://softsync.agency" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="inline-flex items-center hover:opacity-85 transition-opacity"
+                title="SoftSync Agency"
+              >
+                <img 
+                  src="https://download.softsync.agency/softsync-img/softsync_logo.png" 
+                  alt="SoftSync Agency" 
+                  className="h-4.5 object-contain"
+                />
+              </a>
+            </div>
         </div>
       </aside>
 
